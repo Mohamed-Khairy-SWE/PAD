@@ -1,0 +1,1 @@
+Given a business idea or client brief, PAD uses Gemini 3 to automatically produce a full Software Development Life Cycle (SDLC) artifact set (requirements, architecture diagrams in MermaidJS, sequence/flow diagrams, data models, task breakdowns, test plan) and a live-editable MermaidJS diagram viewer
