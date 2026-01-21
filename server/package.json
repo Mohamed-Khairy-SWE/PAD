@@ -1,0 +1,57 @@
+{
+  "name": "pad-server",
+  "version": "1.0.0",
+  "description": "PAD: From Planning to AI IDE",
+  "main": "dist/server.js",
+  "scripts": {
+    "start": "NODE_ENV=production node --env-file=.env ./dist/server.js",
+    "dev": "tsx watch --env-file=.env src/server.ts",
+    "build": "tsc",
+    "prisma:generate": "prisma generate",
+    "prisma:pull": "prisma db pull",
+    "prisma:push": "prisma db push",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "keywords": [
+    "freelancing",
+    "platform",
+    "express",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@types/cookie-parser": "^1.4.10",
+    "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "html-to-text": "^9.0.5",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^7.0.12",
+    "pug": "^3.0.3",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.2",
+    "@types/nodemailer": "^6.4.17",
+    "nodemon": "^3.1.9",
+    "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.2"
+  }
+}

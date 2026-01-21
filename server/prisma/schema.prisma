@@ -1,0 +1,45 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id                String    @id @default(uuid())
+    firstName         String    @map("first_name")
+    lastName          String    @map("last_name")
+    username          String?   @unique
+    email             String    @unique
+    phone             String?   @unique
+    password          String
+    role              String    @default("CLIENT")
+    active            Boolean   @default(true)
+    emailVerified     Boolean   @default(false) @map("email_verified")
+    passwordChangedAt DateTime? @map("password_changed_at")
+    createdAt         DateTime  @default(now()) @map("created_at")
+    updatedAt         DateTime  @updatedAt @map("updated_at")
+
+    // Relations
+    // User -> AdminPrivilege (One -> Many)
+    privileges                AdminPrivilege[]
+
+
+    @@map("users")
+}
+
+model AdminPrivilege {
+    id        String   @id @default(uuid())
+    userId    String   @map("user_id")
+    name      String
+    createdAt DateTime @default(now()) @map("created_at")
+
+    // Relations
+    // AdminPrivilege -> User (Many -> One)
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, name])
+    @@map("admin_privileges")
+}
