@@ -1,0 +1,49 @@
+import { IIdeaAnalysisResult } from "../../ai/types/IAi";
+
+// Status type for ideas
+export type IdeaStatus = "draft" | "confirmed";
+
+// Base idea entity interface
+export interface IIdea {
+    id: string;
+    userId?: string | null;
+    rawText: string;
+    refinedText: string | null;
+    status: IdeaStatus;
+    analysisResult: IIdeaAnalysisResult | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// Input for creating a new idea
+export interface ICreateIdeaData {
+    rawText: string;
+}
+
+// Input for updating/refining an idea
+export interface IUpdateIdeaData {
+    refinedText?: string;
+}
+
+// Repository-specific data
+export interface ICreateIdeaRepositoryData {
+    rawText: string;
+    userId?: string;
+}
+
+export interface IUpdateIdeaRepositoryData {
+    refinedText?: string;
+    analysisResult?: IIdeaAnalysisResult;
+    status?: IdeaStatus;
+}
+
+// Response type for API
+export interface IIdeaResponse {
+    id: string;
+    rawText: string;
+    refinedText: string | null;
+    status: IdeaStatus;
+    analysisResult: IIdeaAnalysisResult | null;
+    createdAt: Date;
+    updatedAt: Date;
+}

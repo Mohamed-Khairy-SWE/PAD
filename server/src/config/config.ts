@@ -57,6 +57,13 @@ interface Config {
         clientSecret: string;
         callbackUrl: string;
     };
+    gemini: {
+        apiKey: string;
+    };
+    claude: string;
+    puter: {
+        authToken: string;
+    };
 }
 
 const config: Config = {
@@ -104,7 +111,7 @@ const config: Config = {
         email: process.env.ADMIN_EMAIL || "admin@lynkr.com",
         password: process.env.ADMIN_PASSWORD || "admin123",
     },
-    webUrl: process.env.FRONTEND_URL || "http://localhost:5173",
+    webUrl: process.env.FRONTEND_URL || "http://localhost:3000",
     redis: {
         host: process.env.REDIS_HOST || "localhost",
         port: parseInt(process.env.REDIS_PORT || "6379", 10),
@@ -114,6 +121,15 @@ const config: Config = {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
         callbackUrl: process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/api/v1/auth/google/callback",
     },
+    gemini: {
+        apiKey: process.env.GEMINI_API_KEY || "",
+    },
+    claude: process.env.CLAUDE_API || "",
+    puter: {
+        authToken: process.env.PUTER_AUTH_TOKEN || "",
+    },
+
+
 };
 
 export default config;

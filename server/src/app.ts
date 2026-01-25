@@ -1,4 +1,4 @@
-import express,{Express} from "express";
+import express, { Express } from "express";
 import morgan from "morgan";
 import path from "path";
 import helmet from "helmet";
@@ -12,6 +12,7 @@ import { generalApiLimiter, authLimiter } from "./middlewares/rate-limit.middlew
 // Import all route modules
 import AuthRouter from "./modules/auth/auth.route";
 import UserRouter from "./modules/user/user.route";
+import IdeaRouter from "./modules/idea/idea.route";
 import { bodyParser, cookieParserMiddleware, corsMiddleware, formParser } from "./middlewares/middlewares";
 
 // Seed default admin user
@@ -47,7 +48,7 @@ import { bodyParser, cookieParserMiddleware, corsMiddleware, formParser } from "
 
 export const ROOT_DIR: string = process.cwd();
 
-const app:Express = express();
+const app: Express = express();
 
 
 // Security middleware
@@ -60,7 +61,7 @@ app.use(helmet({
             imgSrc: ["'self'", "data:", "blob:"],
         },
     },
-    crossOriginEmbedderPolicy: false, 
+    crossOriginEmbedderPolicy: false,
 }));
 
 // Rate limiting
@@ -84,6 +85,7 @@ app.use(
 // API Routes
 app.use("/api/v1/auth", authLimiter, AuthRouter);
 app.use("/api/v1/users", UserRouter);
+app.use("/api/v1/ideas", IdeaRouter);
 
 
 // 404 handler

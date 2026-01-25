@@ -24,10 +24,32 @@ model User {
 
     // Relations
     // User -> AdminPrivilege (One -> Many)
-    privileges                AdminPrivilege[]
+    privileges AdminPrivilege[]
+    // User -> Idea (One -> Many)
+    ideas      Idea[]
 
 
     @@map("users")
+}
+
+// ============================================
+// Module 1: Idea Intake & Pre-Validation
+// ============================================
+
+model Idea {
+    id             String   @id @default(uuid())
+    userId         String?  @map("user_id")
+    rawText        String   @map("raw_text") @db.Text
+    refinedText    String?  @map("refined_text") @db.Text
+    status         String   @default("draft") // draft | confirmed
+    analysisResult Json?    @map("analysis_result")
+    createdAt      DateTime @default(now()) @map("created_at")
+    updatedAt      DateTime @updatedAt @map("updated_at")
+
+    // Relations (optional for testing)
+    user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("ideas")
 }
 
 model AdminPrivilege {
