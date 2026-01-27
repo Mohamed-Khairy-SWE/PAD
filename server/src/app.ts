@@ -13,6 +13,7 @@ import { generalApiLimiter, authLimiter } from "./middlewares/rate-limit.middlew
 import AuthRouter from "./modules/auth/auth.route";
 import UserRouter from "./modules/user/user.route";
 import IdeaRouter from "./modules/idea/idea.route";
+import DocumentRouter from "./modules/document/document.route";
 import { bodyParser, cookieParserMiddleware, corsMiddleware, formParser } from "./middlewares/middlewares";
 
 // Seed default admin user
@@ -86,6 +87,7 @@ app.use(
 app.use("/api/v1/auth", authLimiter, AuthRouter);
 app.use("/api/v1/users", UserRouter);
 app.use("/api/v1/ideas", IdeaRouter);
+app.use("/api/v1/documents", DocumentRouter);
 
 
 // 404 handler

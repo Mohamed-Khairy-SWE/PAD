@@ -183,6 +183,30 @@ export default function IdeaDetailPage() {
                 </div>
             )}
 
+            {/* Documents Section - for confirmed ideas */}
+            {idea.status === "confirmed" && (
+                <Card className="mb-6 border-primary/20 bg-primary/5">
+                    <CardContent className="py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <ListChecks className="h-8 w-8 text-primary" />
+                                <div>
+                                    <h3 className="font-medium">Generate Documents</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Create PRD and BRD documents from this confirmed idea
+                                    </p>
+                                </div>
+                            </div>
+                            <Link href={`/ideas/${ideaId}/documents`}>
+                                <Button>
+                                    View Documents
+                                </Button>
+                            </Link>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* AI Analysis Results */}
             {idea.analysisResult && (
                 <div className="space-y-4">

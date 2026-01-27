@@ -1,0 +1,164 @@
+import { Request, Response, NextFunction } from "express";
+import { catchAsync } from "../../utils/catch-async";
+import DocumentService from "./document.service";
+import { IUpdateDocumentWithChangelogData } from "./types/IDocument";
+
+// Generate documents for an idea
+export const generateDocuments = catchAsync(
+    async (request: Request, response: Response, next: NextFunction) => {
+        const ideaId = request.params.ideaId;
+
+        const documents = await DocumentService.generateDocuments(ideaId, next);
+        if (!documents) return;
+
+        response.status(201).json({
+            status: "success",
+            message: "Documents generated successfully",
+            data: { documents },
+        });
+    }
+);
+
+// Get a single document
+export const getDocument = catchAsync(
+    async (request: Request, response: Response, next: NextFunction) => {
+        const documentId = request.params.id;
+
+        const document = await DocumentService.getDocument(documentId, next);
+        if (!document) return;
+
+        response.status(200).json({
+            status: "success",
+            data: { document },
+        });
+    }
+);
+
+// Get document with version history
+export const getDocumentWithVersions = catchAsync(
+    async (request: Request, response: Response, next: NextFunction) => {
+        const documentId = request.params.id;
+
+        const document = await DocumentService.getDocumentWithVersions(documentId, next);
+        if (!document) return;
+
+        response.status(200).json({
+            status: "success",
+            data: { document },
+        });
+    }
+);
+
+// Get all documents for an idea
+export const getDocumentsByIdea = catchAsync(
+    async (request: Request, response: Response, next: NextFunction) => {
+        const ideaId = request.params.ideaId;
+
+        const documents = await DocumentService.getDocumentsByIdea(ideaId, next);
+        if (!documents) return;
+
+        response.status(200).json({
+            status: "success",
+            data: { documents, count: documents.length },
+        });
+    }
+);
+
+// Update a document
+export const updateDocument = catchAsync(
+    async (request: Request, response: Response, next: NextFunction) => {
+        const documentId = request.params.id;
+        const data: IUpdateDocumentWithChangelogData = {
+            title: request.body.title,
+            content: request.body.content,
+            status: request.body.status,
+            changelog: request.body.changelog,
+        };
+
+        const document = await DocumentService.updateDocument(documentId, data, next);
+        if (!document) return;
+
+        response.status(200).json({
+            status: "success",
+            message: "Document updated successfully",
+            data: { document },
+        });
+    }
+);
+
+// Get version history
+export const getVersionHistory = catchAsync(
+    async (request: Request, response: Response, next: NextFunction) => {
+        const documentId = request.params.id;
+
+        const versions = await DocumentService.getVersionHistory(documentId, next);
+        if (!versions) return;
+
+        response.status(200).json({
+            status: "success",
+            data: { versions, count: versions.length },
+        });
+    }
+);
+
+// Revert to a specific version
+export const revertToVersion = catchAsync(
+    async (request: Request, response: Response, next: NextFunction) => {
+        const documentId = request.params.id;
+        const versionNumber = parseInt(request.params.version, 10);
+
+        if (isNaN(versionNumber)) {
+            return response.status(400).json({
+                status: "fail",
+                message: "Invalid version number",
+            });
+        }
+
+        const document = await DocumentService.revertToVersion(documentId, versionNumber, next);
+        if (!document) return;
+
+        response.status(200).json({
+            status: "success",
+            message: `Reverted to version ${versionNumber}`,
+            data: { document },
+        });
+    }
+);
+
+// Regenerate a document
+export const regenerateDocument = catchAsync(
+    async (request: Request, response: Response, next: NextFunction) => {
+        const documentId = request.params.id;
+
+        const document = await DocumentService.regenerateDocument(documentId, next);
+        if (!document) return;
+
+        response.status(200).json({
+            status: "success",
+            message: "Document regenerated successfully",
+            data: { document },
+        });
+    }
+);
+
+// Export document
+export const exportDocument = catchAsync(
+    async (request: Request, response: Response, next: NextFunction) => {
+        const documentId = request.params.id;
+        const format = request.params.format as "markdown" | "html";
+
+        if (!["markdown", "html"].includes(format)) {
+            return response.status(400).json({
+                status: "fail",
+                message: "Unsupported format. Use 'markdown' or 'html'",
+            });
+        }
+
+        const result = await DocumentService.exportDocument(documentId, format, next);
+        if (!result) return;
+
+        response.setHeader("Content-Type", result.mimeType);
+        response.setHeader("Content-Disposition", `attachment; filename="${result.filename}"`);
+        response.status(200).send(result.content);
+    }
+);

@@ -28,7 +28,6 @@ model User {
     // User -> Idea (One -> Many)
     ideas      Idea[]
 
-
     @@map("users")
 }
 
@@ -46,10 +45,52 @@ model Idea {
     createdAt      DateTime @default(now()) @map("created_at")
     updatedAt      DateTime @updatedAt @map("updated_at")
 
-    // Relations (optional for testing)
-    user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+    // Relations
+    // Idea -> User (Many -> One)
+    user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    // Idea -> Document (One -> Many)
+    documents Document[]
 
     @@map("ideas")
+}
+
+// ============================================
+// Module 2: Document Generation (PRD/BRD)
+// ============================================
+
+model Document {
+    id        String   @id @default(uuid())
+    ideaId    String   @map("idea_id")
+    type      String // "PRD" | "BRD"
+    title     String
+    content   String   @db.Text
+    status    String   @default("draft") // draft | published
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    // Document -> Idea (Many -> One)
+    idea     Idea              @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+    // Document -> DocumentVersion (One -> Many)
+    versions DocumentVersion[]
+
+    @@map("documents")
+}
+
+model DocumentVersion {
+    id         String   @id @default(uuid())
+    documentId String   @map("document_id")
+    version    Int
+    content    String   @db.Text
+    changelog  String?  @db.Text
+    createdAt  DateTime @default(now()) @map("created_at")
+
+    // Relations
+    // DocumentVersion -> Document (Many -> One)
+    document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+    @@unique([documentId, version])
+    @@map("document_versions")
 }
 
 model AdminPrivilege {

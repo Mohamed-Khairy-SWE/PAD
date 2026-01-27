@@ -15,7 +15,7 @@ import {
     updateUserStatus,
 } from "./user.controller";
 
-const UserRouter = Router();
+const UserRouter:Router = Router();
 
 UserRouter.route("/batch").post(createBatchUsers).get(getBatchUsers);
 UserRouter.route("/min-batch").get(getMinBatchUsers);

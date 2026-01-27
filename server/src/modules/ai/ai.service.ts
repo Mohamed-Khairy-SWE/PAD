@@ -1,8 +1,10 @@
 import { NextFunction } from "express";
 import config from "../../config/config";
 import AppError from "../../utils/app-error";
-import { IIdeaAnalysisResult } from "./types/IAi";
+import { IIdeaAnalysisResult, IGeneratedDocumentContent } from "./types/IAi";
 import { buildAnalyzeIdeaPrompt } from "./prompts/analyze-idea.prompt";
+import { buildGeneratePRDPrompt } from "./prompts/generate-prd.prompt";
+import { buildGenerateBRDPrompt } from "./prompts/generate-brd.prompt";
 
 // Puter.js type (using any for the instance since types aren't fully exposed for init method)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -112,6 +114,36 @@ class AiService {
         }
     }
 
+    // Parse document generation response
+    private static parseDocumentResult(
+        responseText: string
+    ): IGeneratedDocumentContent | null {
+        try {
+            let jsonStr = responseText.trim();
+
+            // Handle cases where the response is wrapped in markdown code blocks
+            const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (jsonMatch) {
+                jsonStr = jsonMatch[1].trim();
+            }
+
+            const parsed = JSON.parse(jsonStr);
+
+            // Validate the structure
+            if (!parsed.title || !parsed.content) {
+                return null;
+            }
+
+            return {
+                title: parsed.title,
+                content: parsed.content,
+            };
+        } catch (error) {
+            console.error("Failed to parse document response:", error);
+            return null;
+        }
+    }
+
     // Analyze a software idea
     static async analyzeIdea(
         ideaText: string,
@@ -170,6 +202,117 @@ class AiService {
             ],
         };
     }
+
+    // Generate PRD document
+    static async generatePRD(
+        ideaText: string,
+        analysisResult: unknown,
+        next: NextFunction
+    ): Promise<IGeneratedDocumentContent | void> {
+        const prompt = buildGeneratePRDPrompt(ideaText, analysisResult);
+
+        let lastError: Error | null = null;
+
+        for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+            try {
+                const responseText = await this.callLLM(prompt);
+                const result = this.parseDocumentResult(responseText);
+
+                if (result) {
+                    return result;
+                }
+
+                if (attempt < this.MAX_RETRIES) {
+                    console.log(`PRD generation retry ${attempt}: Invalid JSON response`);
+                    continue;
+                }
+            } catch (error) {
+                lastError = error as Error;
+                console.error(`PRD generation attempt ${attempt} failed:`, error);
+
+                if (attempt < this.MAX_RETRIES) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    continue;
+                }
+            }
+        }
+
+        if (lastError) {
+            console.error("PRD generation failed after retries:", lastError);
+            return next(
+                new AppError(503, "AI service temporarily unavailable. Please try again.")
+            );
+        }
+
+        // Fallback PRD
+        return {
+            title: "PRD: Product Requirements Document",
+            content: `<h2>1. Product Overview</h2>
+<p>This document outlines the product requirements based on the provided idea. AI generation encountered an issue, please review and update manually.</p>
+<h2>2. Original Idea</h2>
+<p>${ideaText}</p>
+<h2>3. Functional Requirements</h2>
+<p>Please define the core features required for this product.</p>
+<h2>4. Non-Functional Requirements</h2>
+<p>Please specify performance, security, and scalability requirements.</p>`,
+        };
+    }
+
+    // Generate BRD document
+    static async generateBRD(
+        ideaText: string,
+        analysisResult: unknown,
+        next: NextFunction
+    ): Promise<IGeneratedDocumentContent | void> {
+        const prompt = buildGenerateBRDPrompt(ideaText, analysisResult);
+
+        let lastError: Error | null = null;
+
+        for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+            try {
+                const responseText = await this.callLLM(prompt);
+                const result = this.parseDocumentResult(responseText);
+
+                if (result) {
+                    return result;
+                }
+
+                if (attempt < this.MAX_RETRIES) {
+                    console.log(`BRD generation retry ${attempt}: Invalid JSON response`);
+                    continue;
+                }
+            } catch (error) {
+                lastError = error as Error;
+                console.error(`BRD generation attempt ${attempt} failed:`, error);
+
+                if (attempt < this.MAX_RETRIES) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    continue;
+                }
+            }
+        }
+
+        if (lastError) {
+            console.error("BRD generation failed after retries:", lastError);
+            return next(
+                new AppError(503, "AI service temporarily unavailable. Please try again.")
+            );
+        }
+
+        // Fallback BRD
+        return {
+            title: "BRD: Business Requirements Document",
+            content: `<h2>1. Executive Summary</h2>
+<p>This document outlines the business requirements based on the provided idea. AI generation encountered an issue, please review and update manually.</p>
+<h2>2. Business Objectives</h2>
+<p>Please define the key business goals for this project.</p>
+<h2>3. Original Idea</h2>
+<p>${ideaText}</p>
+<h2>4. Stakeholders</h2>
+<p>Please identify key stakeholders and their interests.</p>`,
+        };
+    }
 }
 
 export default AiService;
+

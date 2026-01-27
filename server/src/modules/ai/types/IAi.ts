@@ -27,3 +27,9 @@ export interface ILLMResponse {
         totalTokens: number;
     };
 }
+
+// Generated document content from AI
+export interface IGeneratedDocumentContent {
+    title: string;
+    content: string;
+}
