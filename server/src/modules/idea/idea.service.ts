@@ -85,7 +85,7 @@ class IdeaService {
         return updatedIdea as IIdea;
     }
 
-    // Refine an idea with new text
+    // Refine an idea with new text and/or answers to clarifying questions
     static async refineIdea(
         ideaId: string,
         data: IUpdateIdeaData,
@@ -109,7 +109,38 @@ class IdeaService {
             }
         }
 
-        // Update the idea
+        // If answers are provided, append them to refined text and re-analyze
+        if (data.answers && data.answers.length > 0) {
+            // Build context from answers
+            const answersContext = data.answers
+                .map((qa) => `Q: ${qa.question}\nA: ${qa.answer}`)
+                .join("\n\n");
+
+            // Use existing refined text or raw text as base
+            const baseText = data.refinedText || idea.refinedText || idea.rawText;
+            const refinedWithAnswers = `${baseText}\n\n--- Additional Context ---\n${answersContext}`;
+
+            // Re-analyze with the answers for better insights
+            const analysisResult = await AiService.reAnalyzeWithAnswers(
+                idea.refinedText || idea.rawText,
+                data.answers,
+                next
+            );
+
+            if (!analysisResult) {
+                return; // Error already handled by AI service
+            }
+
+            // Update the idea with new refined text and analysis
+            const updatedIdea = await this.ideaRepository.updateIdea(ideaId, {
+                refinedText: this.normalizeText(refinedWithAnswers),
+                analysisResult,
+            });
+
+            return updatedIdea as IIdea;
+        }
+
+        // Standard refinement without answers
         const updatedIdea = await this.ideaRepository.updateIdea(ideaId, {
             refinedText: data.refinedText
                 ? this.normalizeText(data.refinedText)

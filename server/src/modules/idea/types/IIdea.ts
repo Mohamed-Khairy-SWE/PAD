@@ -20,9 +20,16 @@ export interface ICreateIdeaData {
     rawText: string;
 }
 
+// Question and answer pair for clarifying questions
+export interface IQuestionAnswer {
+    question: string;
+    answer: string;
+}
+
 // Input for updating/refining an idea
 export interface IUpdateIdeaData {
     refinedText?: string;
+    answers?: IQuestionAnswer[];
 }
 
 // Repository-specific data

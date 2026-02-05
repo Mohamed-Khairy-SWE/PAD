@@ -2,9 +2,10 @@ import { NextFunction } from "express";
 import config from "../../config/config";
 import AppError from "../../utils/app-error";
 import { IIdeaAnalysisResult, IGeneratedDocumentContent } from "./types/IAi";
-import { buildAnalyzeIdeaPrompt } from "./prompts/analyze-idea.prompt";
+import { buildAnalyzeIdeaPrompt, buildReanalyzeWithAnswersPrompt, IQuestionAnswerInput } from "./prompts/analyze-idea.prompt";
 import { buildGeneratePRDPrompt } from "./prompts/generate-prd.prompt";
 import { buildGenerateBRDPrompt } from "./prompts/generate-brd.prompt";
+import { buildDiagramPrompt, DiagramType, IGeneratedDiagram } from "./prompts/generate-diagram.prompt";
 
 // Puter.js type (using any for the instance since types aren't fully exposed for init method)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -203,6 +204,60 @@ class AiService {
         };
     }
 
+    // Re-analyze an idea with user's answers to clarifying questions
+    static async reAnalyzeWithAnswers(
+        ideaText: string,
+        answers: IQuestionAnswerInput[],
+        next: NextFunction
+    ): Promise<IIdeaAnalysisResult | void> {
+        const prompt = buildReanalyzeWithAnswersPrompt(ideaText, answers);
+
+        let lastError: Error | null = null;
+
+        for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+            try {
+                const responseText = await this.callLLM(prompt);
+                const result = this.parseAnalysisResult(responseText);
+
+                if (result) {
+                    return result;
+                }
+
+                if (attempt < this.MAX_RETRIES) {
+                    console.log(`Re-analysis retry ${attempt}: Invalid JSON response`);
+                    continue;
+                }
+            } catch (error) {
+                lastError = error as Error;
+                console.error(`Re-analysis attempt ${attempt} failed:`, error);
+
+                if (attempt < this.MAX_RETRIES) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    continue;
+                }
+            }
+        }
+
+        if (lastError) {
+            console.error("Re-analysis failed after retries:", lastError);
+            return next(
+                new AppError(503, "AI service temporarily unavailable. Please try again.")
+            );
+        }
+
+        // Fallback: reduced questions assuming user provided some clarity
+        return {
+            missingDetails: [],
+            complementarySuggestions: [
+                "Consider documenting the requirements based on your clarifications.",
+            ],
+            constraintsAndRisks: [
+                "AI re-analysis encountered an issue. Please review manually.",
+            ],
+            clarifyingQuestions: [],
+        };
+    }
+
     // Generate PRD document
     static async generatePRD(
         ideaText: string,
@@ -312,7 +367,122 @@ class AiService {
 <p>Please identify key stakeholders and their interests.</p>`,
         };
     }
+
+    // Parse diagram generation response
+    private static parseDiagramResult(
+        responseText: string
+    ): IGeneratedDiagram | null {
+        try {
+            let jsonStr = responseText.trim();
+
+            // Handle markdown code blocks
+            const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (jsonMatch) {
+                jsonStr = jsonMatch[1].trim();
+            }
+
+            const parsed = JSON.parse(jsonStr);
+
+            if (!parsed.title || !parsed.mermaidCode) {
+                return null;
+            }
+
+            return {
+                title: parsed.title,
+                mermaidCode: parsed.mermaidCode,
+            };
+        } catch (error) {
+            console.error("Failed to parse diagram response:", error);
+            return null;
+        }
+    }
+
+    // Generate a Mermaid diagram
+    static async generateDiagram(
+        type: DiagramType,
+        ideaText: string,
+        next: NextFunction
+    ): Promise<IGeneratedDiagram | void> {
+        const prompt = buildDiagramPrompt(type, ideaText);
+
+        let lastError: Error | null = null;
+
+        for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+            try {
+                const responseText = await this.callLLM(prompt);
+                const result = this.parseDiagramResult(responseText);
+
+                if (result) {
+                    return result;
+                }
+
+                if (attempt < this.MAX_RETRIES) {
+                    console.log(`Diagram generation retry ${attempt}: Invalid JSON response`);
+                    continue;
+                }
+            } catch (error) {
+                lastError = error as Error;
+                console.error(`Diagram generation attempt ${attempt} failed:`, error);
+
+                if (attempt < this.MAX_RETRIES) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    continue;
+                }
+            }
+        }
+
+        if (lastError) {
+            console.error("Diagram generation failed after retries:", lastError);
+            return next(
+                new AppError(503, "AI service temporarily unavailable. Please try again.")
+            );
+        }
+
+        // Return fallback based on type
+        const fallbacks: Record<DiagramType, IGeneratedDiagram> = {
+            ERD: {
+                title: "Entity Relationship Diagram",
+                mermaidCode: `erDiagram
+    USER {
+        string id PK
+        string name
+        string email
+    }
+    NOTE: "AI generation failed - please edit manually"`,
+            },
+            SEQUENCE: {
+                title: "Sequence Diagram",
+                mermaidCode: `sequenceDiagram
+    participant User
+    participant System
+    User->>System: Request
+    System-->>User: Response
+    Note over User,System: AI generation failed - please edit manually`,
+            },
+            SCHEMA: {
+                title: "System Architecture",
+                mermaidCode: `graph TB
+    subgraph Frontend
+        A[Client]
+    end
+    subgraph Backend
+        B[API]
+    end
+    A --> B
+    Note: AI generation failed - please edit manually`,
+            },
+            FLOWCHART: {
+                title: "Process Flowchart",
+                mermaidCode: `flowchart TD
+    A[Start] --> B[Process]
+    B --> C[End]
+    style A fill:#f9f
+    Note: AI generation failed - please edit manually`,
+            },
+        };
+
+        return fallbacks[type];
+    }
 }
 
 export default AiService;
-

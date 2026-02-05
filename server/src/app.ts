@@ -14,6 +14,7 @@ import AuthRouter from "./modules/auth/auth.route";
 import UserRouter from "./modules/user/user.route";
 import IdeaRouter from "./modules/idea/idea.route";
 import DocumentRouter from "./modules/document/document.route";
+import DiagramRouter from "./modules/diagram/diagram.route";
 import { bodyParser, cookieParserMiddleware, corsMiddleware, formParser } from "./middlewares/middlewares";
 
 // Seed default admin user
@@ -88,6 +89,7 @@ app.use("/api/v1/auth", authLimiter, AuthRouter);
 app.use("/api/v1/users", UserRouter);
 app.use("/api/v1/ideas", IdeaRouter);
 app.use("/api/v1/documents", DocumentRouter);
+app.use("/api/v1/diagrams", DiagramRouter);
 
 
 // 404 handler

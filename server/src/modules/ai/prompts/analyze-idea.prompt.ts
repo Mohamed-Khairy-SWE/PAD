@@ -38,5 +38,63 @@ You MUST respond with ONLY a valid JSON object in the following format. Do not i
 {{IDEA_TEXT}}`;
 
 export function buildAnalyzeIdeaPrompt(ideaText: string): string {
-    return ANALYZE_IDEA_PROMPT.replace("{{IDEA_TEXT}}", ideaText);
+  return ANALYZE_IDEA_PROMPT.replace("{{IDEA_TEXT}}", ideaText);
+}
+
+// Prompt for re-analyzing with user answers
+export const REANALYZE_WITH_ANSWERS_PROMPT = `You are an expert software architect and product analyst. Your task is to re-analyze a software idea using additional context provided by the user's answers to clarifying questions.
+
+**Instructions:**
+1. Review the original software idea
+2. Consider the user's answers to previous clarifying questions
+3. Provide an updated analysis with the new context
+4. Identify any remaining gaps or new considerations
+
+**Output Format:**
+You MUST respond with ONLY a valid JSON object in the following format. Do not include any text before or after the JSON.
+
+{
+  "missingDetails": [
+    "List of remaining missing details (fewer now that user provided answers)"
+  ],
+  "complementarySuggestions": [
+    "Updated list of complementary features considering user's clarifications"
+  ],
+  "constraintsAndRisks": [
+    "Updated constraints and risks based on the new information"
+  ],
+  "clarifyingQuestions": [
+    "Any remaining questions, or new questions based on the answers (can be empty if clear enough)"
+  ]
+}
+
+**Rules:**
+- Output ONLY valid JSON, no markdown code blocks
+- Each array can contain 0-5 items (reduce items as clarity improves)
+- Reference the user's answers in your analysis
+- Be specific and actionable
+- If the user has provided sufficient clarity, you may have fewer questions
+
+**Original Software Idea:**
+{{IDEA_TEXT}}
+
+**User's Answers to Clarifying Questions:**
+{{ANSWERS}}`;
+
+export interface IQuestionAnswerInput {
+  question: string;
+  answer: string;
+}
+
+export function buildReanalyzeWithAnswersPrompt(
+  ideaText: string,
+  answers: IQuestionAnswerInput[]
+): string {
+  const formattedAnswers = answers
+    .map((qa, i) => `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer}`)
+    .join("\n\n");
+
+  return REANALYZE_WITH_ANSWERS_PROMPT
+    .replace("{{IDEA_TEXT}}", ideaText)
+    .replace("{{ANSWERS}}", formattedAnswers);
 }

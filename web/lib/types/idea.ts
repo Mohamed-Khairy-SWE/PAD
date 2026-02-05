@@ -25,9 +25,16 @@ export interface CreateIdeaInput {
     rawText: string;
 }
 
+// Question and answer pair for clarifying questions
+export interface IQuestionAnswer {
+    question: string;
+    answer: string;
+}
+
 // Input for refining an idea
 export interface RefineIdeaInput {
-    refinedText: string;
+    refinedText?: string;
+    answers?: IQuestionAnswer[];
 }
 
 // API Response types
@@ -99,3 +106,55 @@ export interface DocumentVersionsResponse {
 }
 
 export type ExportFormat = "markdown" | "html";
+
+// ============================================
+// Diagram Types (Module 3)
+// ============================================
+
+export type DiagramType = "ERD" | "SEQUENCE" | "SCHEMA" | "FLOWCHART";
+export type DiagramStatus = "draft" | "published";
+
+export interface Diagram {
+    id: string;
+    ideaId: string;
+    type: DiagramType;
+    title: string;
+    mermaidCode: string;
+    status: DiagramStatus;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface DiagramVersion {
+    id: string;
+    diagramId: string;
+    version: number;
+    mermaidCode: string;
+    changelog: string | null;
+    createdAt: string;
+}
+
+export interface DiagramWithVersions extends Diagram {
+    versions: DiagramVersion[];
+}
+
+export interface UpdateDiagramInput {
+    title?: string;
+    mermaidCode?: string;
+    status?: DiagramStatus;
+    changelog?: string;
+}
+
+export interface DiagramResponse {
+    diagram: Diagram;
+}
+
+export interface DiagramsListResponse {
+    diagrams: Diagram[];
+    count: number;
+}
+
+export interface DiagramVersionsResponse {
+    versions: DiagramVersion[];
+    count: number;
+}

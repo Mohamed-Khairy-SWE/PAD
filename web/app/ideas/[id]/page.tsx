@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ideaApi } from "@/lib/api";
-import { Idea } from "@/lib/types/idea";
+import { Idea, IQuestionAnswer } from "@/lib/types/idea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,8 @@ import {
     HelpCircle,
     Lightbulb,
     ListChecks,
+    Send,
+    GitBranch,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -30,7 +32,10 @@ export default function IdeaDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
+    const [isSubmittingAnswers, setIsSubmittingAnswers] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [answers, setAnswers] = useState<Record<number, string>>({});
+    const [hasSubmittedAnswers, setHasSubmittedAnswers] = useState(false);
 
     useEffect(() => {
         async function fetchIdea() {
@@ -70,6 +75,43 @@ export default function IdeaDetailPage() {
         } finally {
             setIsConfirming(false);
         }
+    };
+
+    const handleSubmitAnswers = async () => {
+        if (!idea?.analysisResult?.clarifyingQuestions) return;
+
+        // Build answers array from state
+        const answersArray: IQuestionAnswer[] = idea.analysisResult.clarifyingQuestions
+            .map((question, idx) => ({
+                question,
+                answer: answers[idx] || "",
+            }))
+            .filter((qa) => qa.answer.trim().length > 0);
+
+        if (answersArray.length === 0) {
+            setError("Please provide at least one answer");
+            return;
+        }
+
+        setIsSubmittingAnswers(true);
+        setError(null);
+        try {
+            console.log("Submitting answers:", answersArray);
+            const updated = await ideaApi.refine(ideaId, { answers: answersArray });
+            console.log("Refine response:", updated);
+            setIdea(updated);
+            setAnswers({}); // Reset answers after successful submission
+            setHasSubmittedAnswers(true); // Mark that answers have been submitted
+        } catch (err) {
+            console.error("Submit error:", err);
+            setError(err instanceof Error ? err.message : "Failed to submit answers");
+        } finally {
+            setIsSubmittingAnswers(false);
+        }
+    };
+
+    const handleAnswerChange = (index: number, value: string) => {
+        setAnswers((prev) => ({ ...prev, [index]: value }));
     };
 
     if (isLoading) {
@@ -166,45 +208,72 @@ export default function IdeaDetailPage() {
                     </Button>
 
                     {idea.analysisResult && (
-                        <Button onClick={handleConfirm} disabled={isConfirming}>
-                            {isConfirming ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Confirming...
-                                </>
-                            ) : (
-                                <>
-                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                    Confirm Idea
-                                </>
-                            )}
-                        </Button>
+                        // Only show confirm button if there are no clarifying questions OR answers have been submitted
+                        (idea.analysisResult.clarifyingQuestions.length === 0 || hasSubmittedAnswers) && (
+                            <Button onClick={handleConfirm} disabled={isConfirming}>
+                                {isConfirming ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Confirming...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                        Confirm Idea
+                                    </>
+                                )}
+                            </Button>
+                        )
                     )}
                 </div>
             )}
 
-            {/* Documents Section - for confirmed ideas */}
+            {/* Documents and Diagrams Sections - for confirmed ideas */}
             {idea.status === "confirmed" && (
-                <Card className="mb-6 border-primary/20 bg-primary/5">
-                    <CardContent className="py-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <ListChecks className="h-8 w-8 text-primary" />
-                                <div>
-                                    <h3 className="font-medium">Generate Documents</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Create PRD and BRD documents from this confirmed idea
-                                    </p>
+                <>
+                    <Card className="mb-6 border-primary/20 bg-primary/5">
+                        <CardContent className="py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <ListChecks className="h-8 w-8 text-primary" />
+                                    <div>
+                                        <h3 className="font-medium">Generate Documents</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Create PRD and BRD documents from this confirmed idea
+                                        </p>
+                                    </div>
                                 </div>
+                                <Link href={`/ideas/${ideaId}/documents`}>
+                                    <Button>
+                                        View Documents
+                                    </Button>
+                                </Link>
                             </div>
-                            <Link href={`/ideas/${ideaId}/documents`}>
-                                <Button>
-                                    View Documents
-                                </Button>
-                            </Link>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+
+                    {/* Diagrams Section */}
+                    <Card className="mb-6 border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20">
+                        <CardContent className="py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <GitBranch className="h-8 w-8 text-blue-500" />
+                                    <div>
+                                        <h3 className="font-medium">Generate Diagrams</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Create ERD, Sequence, and Architecture diagrams
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link href={`/ideas/${ideaId}/diagrams`}>
+                                    <Button variant="outline">
+                                        View Diagrams
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
             )}
 
             {/* AI Analysis Results */}
@@ -282,7 +351,7 @@ export default function IdeaDetailPage() {
                         </Card>
                     )}
 
-                    {/* Clarifying Questions */}
+                    {/* Clarifying Questions with Answers */}
                     {idea.analysisResult.clarifyingQuestions.length > 0 && (
                         <Card>
                             <CardHeader className="pb-3">
@@ -291,15 +360,44 @@ export default function IdeaDetailPage() {
                                     Clarifying Questions
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <ul className="space-y-2">
-                                    {idea.analysisResult.clarifyingQuestions.map((item, idx) => (
-                                        <li key={idx} className="flex items-start gap-2">
-                                            <span className="text-blue-500 mt-1">?</span>
-                                            <span>{item}</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                            <CardContent className="space-y-4">
+                                {idea.analysisResult.clarifyingQuestions.map((question, idx) => (
+                                    <div key={idx} className="space-y-2">
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-blue-500 mt-1 font-medium">Q{idx + 1}:</span>
+                                            <span className="font-medium">{question}</span>
+                                        </div>
+                                        {idea.status === "draft" && (
+                                            <textarea
+                                                className="w-full px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[80px] resize-y"
+                                                placeholder="Type your answer here..."
+                                                value={answers[idx] || ""}
+                                                onChange={(e) => handleAnswerChange(idx, e.target.value)}
+                                                disabled={isSubmittingAnswers}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                                {idea.status === "draft" && (
+                                    <Button
+                                        onClick={handleSubmitAnswers}
+                                        disabled={isSubmittingAnswers || Object.values(answers).every((a) => !a?.trim())}
+                                        className="w-full mt-4"
+                                        variant="secondary"
+                                    >
+                                        {isSubmittingAnswers ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Submitting & Re-analyzing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send className="mr-2 h-4 w-4" />
+                                                Submit Answers & Re-analyze
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
                             </CardContent>
                         </Card>
                     )}

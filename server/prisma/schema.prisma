@@ -50,6 +50,8 @@ model Idea {
     user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
     // Idea -> Document (One -> Many)
     documents Document[]
+    // Idea -> Diagram (One -> Many)
+    diagrams  Diagram[]
 
     @@map("ideas")
 }
@@ -105,4 +107,43 @@ model AdminPrivilege {
 
     @@unique([userId, name])
     @@map("admin_privileges")
+}
+
+// ============================================
+// Module 3: Diagram Generation
+// ============================================
+
+model Diagram {
+    id          String   @id @default(uuid())
+    ideaId      String   @map("idea_id")
+    type        String   // "ERD" | "SEQUENCE" | "SCHEMA" | "FLOWCHART"
+    title       String
+    mermaidCode String   @map("mermaid_code") @db.Text
+    status      String   @default("draft") // draft | published
+    createdAt   DateTime @default(now()) @map("created_at")
+    updatedAt   DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    // Diagram -> Idea (Many -> One)
+    idea     Idea             @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+    // Diagram -> DiagramVersion (One -> Many)
+    versions DiagramVersion[]
+
+    @@map("diagrams")
+}
+
+model DiagramVersion {
+    id          String   @id @default(uuid())
+    diagramId   String   @map("diagram_id")
+    version     Int
+    mermaidCode String   @map("mermaid_code") @db.Text
+    changelog   String?  @db.Text
+    createdAt   DateTime @default(now()) @map("created_at")
+
+    // Relations
+    // DiagramVersion -> Diagram (Many -> One)
+    diagram Diagram @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+
+    @@unique([diagramId, version])
+    @@map("diagram_versions")
 }
