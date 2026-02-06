@@ -15,6 +15,8 @@ import UserRouter from "./modules/user/user.route";
 import IdeaRouter from "./modules/idea/idea.route";
 import DocumentRouter from "./modules/document/document.route";
 import DiagramRouter from "./modules/diagram/diagram.route";
+import FeatureRouter from "./modules/feature/feature.route";
+import TaskRouter from "./modules/task/task.route";
 import { bodyParser, cookieParserMiddleware, corsMiddleware, formParser } from "./middlewares/middlewares";
 
 // Seed default admin user
@@ -90,6 +92,8 @@ app.use("/api/v1/users", UserRouter);
 app.use("/api/v1/ideas", IdeaRouter);
 app.use("/api/v1/documents", DocumentRouter);
 app.use("/api/v1/diagrams", DiagramRouter);
+app.use("/api/v1/features", FeatureRouter);
+app.use("/api/v1/tasks", TaskRouter);
 
 
 // 404 handler

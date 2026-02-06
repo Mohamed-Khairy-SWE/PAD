@@ -31,7 +31,7 @@ class AiService {
         }
         return this.puter;
     }
-    private static async callLLM(prompt: string): Promise<string> {
+    static async callLLM(prompt: string): Promise<string> {
         const puter = this.getPuter();
 
         const response = await puter.ai.chat(prompt, {

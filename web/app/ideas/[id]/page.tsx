@@ -273,6 +273,28 @@ export default function IdeaDetailPage() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Features & Tasks Section */}
+                    <Card className="mb-6 border-green-500/20 bg-green-50/50 dark:bg-green-950/20">
+                        <CardContent className="py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <ListChecks className="h-8 w-8 text-green-500" />
+                                    <div>
+                                        <h3 className="font-medium">Features & Tasks</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Break down into features and actionable tasks
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link href={`/ideas/${ideaId}/features`}>
+                                    <Button variant="outline">
+                                        View Features & Tasks
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </>
             )}
 

@@ -11,7 +11,7 @@ import {
     exportDocument,
 } from "./document.controller";
 
-const DocumentRouter = Router();
+const DocumentRouter:Router = Router();
 
 // Generate PRD & BRD for an idea
 DocumentRouter.post("/generate/:ideaId", generateDocuments);
