@@ -6,6 +6,7 @@ import { ideaApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowUp, Sparkles } from "lucide-react";
 import Link from "next/link";
+import Logo from "@/components/logo";
 
 const MIN_CHAR_COUNT = 20;
 const MAX_CHAR_COUNT = 10000;
@@ -95,13 +96,9 @@ export default function NewIdeaPage() {
                         {/* Hero Section - Only show when empty */}
                         {!ideaText && !isSubmitting && (
                             <div className="text-center space-y-4 mb-8">
-                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                                    <Sparkles className="h-6 w-6 text-primary" />
-                                </div>
+                                <Logo/>
                                 <div>
-                                    <h1 className="text-3xl font-semibold tracking-tight mb-2">
-                                        Share Your Idea
-                                    </h1>
+                                    
                                     <p className="text-muted-foreground">
                                         Describe your software idea and get AI-powered analysis
                                     </p>
